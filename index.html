@@ -121,7 +121,14 @@
             font-size: 1.2rem;
             font-weight: 600;
             color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .bucket-subtitle {
+            font-size: 0.9rem;
+            color: #64748b;
             margin-bottom: 10px;
+            font-style: italic;
         }
 
         .search-box {
@@ -151,9 +158,10 @@
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            cursor: grab;
+            cursor: pointer;
             transition: all 0.3s ease;
             user-select: none;
+            position: relative;
         }
 
         .bucket-item:hover {
@@ -163,9 +171,32 @@
             box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
         }
 
+        .bucket-item.selected {
+            background: #dcfce7;
+            border-color: #16a34a;
+            box-shadow: 0 2px 8px rgba(22, 163, 74, 0.15);
+        }
+
         .bucket-item.dragging {
             opacity: 0.5;
             cursor: grabbing;
+        }
+
+        .double-click-hint {
+            position: absolute;
+            top: 2px;
+            right: 5px;
+            font-size: 0.7rem;
+            color: #6b7280;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 1px 4px;
+            border-radius: 3px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .bucket-item:hover .double-click-hint {
+            opacity: 1;
         }
 
         .pivot-designer {
@@ -213,6 +244,12 @@
             font-size: 1.1rem;
             font-weight: 600;
             color: #475569;
+            margin-bottom: 10px;
+        }
+
+        .drop-zone-subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
             margin-bottom: 10px;
         }
 
@@ -475,7 +512,7 @@
     <div class="container">
         <div class="header">
             <h1>Advanced Pivot Table Analytics</h1>
-            <p>Transform your data into actionable insights with powerful drag-and-drop analytics</p>
+            <p>Transform your data into actionable insights with powerful drag-and-drop or double-click analytics</p>
         </div>
 
         <div class="options-panel">
@@ -492,6 +529,7 @@
                 <div class="bucket" id="time-bucket">
                     <div class="bucket-header">
                         <h3>Time Variables</h3>
+                        <div class="bucket-subtitle">Double-click to add to Rows</div>
                         <input type="text" class="search-box" placeholder="Search time variables..." id="time-search">
                     </div>
                     <div class="bucket-content" id="time-content"></div>
@@ -500,6 +538,7 @@
                 <div class="bucket" id="factor-bucket">
                     <div class="bucket-header">
                         <h3>Factor Variables</h3>
+                        <div class="bucket-subtitle">Double-click to add to Columns</div>
                         <input type="text" class="search-box" placeholder="Search factor variables..." id="factor-search">
                     </div>
                     <div class="bucket-content" id="factor-content"></div>
@@ -508,6 +547,7 @@
                 <div class="bucket" id="numeric-bucket">
                     <div class="bucket-header">
                         <h3>Numeric Variables</h3>
+                        <div class="bucket-subtitle">Double-click to add to Values</div>
                         <input type="text" class="search-box" placeholder="Search numeric variables..." id="numeric-search">
                     </div>
                     <div class="bucket-content" id="numeric-content"></div>
@@ -519,14 +559,17 @@
                 <div class="pivot-areas">
                     <div class="drop-zone" id="rows-zone">
                         <h4>Rows</h4>
+                        <div class="drop-zone-subtitle">Single selection only</div>
                         <div class="drop-zone-content" id="rows-content"></div>
                     </div>
                     <div class="drop-zone" id="columns-zone">
                         <h4>Columns (Optional)</h4>
+                        <div class="drop-zone-subtitle">Multiple selections allowed</div>
                         <div class="drop-zone-content" id="columns-content"></div>
                     </div>
                     <div class="drop-zone" id="values-zone">
                         <h4>Values</h4>
+                        <div class="drop-zone-subtitle">Multiple selections allowed</div>
                         <div class="drop-zone-content" id="values-content"></div>
                     </div>
                 </div>
@@ -659,7 +702,7 @@
         function renderTimeVariables() {
             timeContent.innerHTML = '';
             timeVariables.forEach(variable => {
-                const item = createDraggableItem(variable, 'time');
+                const item = createInteractiveItem(variable, 'time');
                 timeContent.appendChild(item);
             });
         }
@@ -667,7 +710,7 @@
         function renderFactorVariables() {
             factorContent.innerHTML = '';
             factorVariables.forEach(variable => {
-                const item = createDraggableItem(variable, 'factor');
+                const item = createInteractiveItem(variable, 'factor');
                 factorContent.appendChild(item);
             });
         }
@@ -675,19 +718,69 @@
         function renderNumericVariables() {
             numericContent.innerHTML = '';
             numericVariables.forEach(variable => {
-                const item = createDraggableItem(variable, 'numeric');
+                const item = createInteractiveItem(variable, 'numeric');
                 numericContent.appendChild(item);
             });
         }
 
-        function createDraggableItem(text, type) {
+        function createInteractiveItem(text, type) {
             const item = document.createElement('div');
             item.className = 'bucket-item';
             item.textContent = text;
             item.draggable = true;
             item.dataset.type = type;
             item.dataset.value = text;
+            
+            // Add double-click hint
+            const hint = document.createElement('span');
+            hint.className = 'double-click-hint';
+            hint.textContent = '2x';
+            item.appendChild(hint);
+            
+            // Add double-click event listener
+            item.addEventListener('dblclick', (e) => {
+                handleDoubleClick(e, { value: text, type: type, text: text });
+            });
+            
             return item;
+        }
+
+        function handleDoubleClick(event, data) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Add visual feedback
+            const item = event.currentTarget;
+            item.classList.add('selected');
+            setTimeout(() => item.classList.remove('selected'), 300);
+            
+            // Map variables to their respective buckets based on type
+            if (data.type === 'time') {
+                // Time variables go to rows (single selection only)
+                currentState.rows = [data]; // Replace existing
+                updateDropZoneDisplay('rows-zone');
+                showMessage(`Time variable "${data.text}" added to Rows`, 'success');
+            } else if (data.type === 'factor') {
+                // Factor variables go to columns (multiple selections allowed)
+                if (!currentState.columns.some(item => item.value === data.value)) {
+                    currentState.columns.push(data);
+                    updateDropZoneDisplay('columns-zone');
+                    showMessage(`Factor variable "${data.text}" added to Columns`, 'success');
+                } else {
+                    showMessage(`Factor variable "${data.text}" is already in Columns`, 'error');
+                }
+            } else if (data.type === 'numeric') {
+                // Numeric variables go to values (multiple selections allowed)
+                if (!currentState.values.some(item => item.value === data.value)) {
+                    currentState.values.push(data);
+                    // Initialize default aggregation
+                    currentState.aggregations[data.value] = 'sum';
+                    updateDropZoneDisplay('values-zone');
+                    showMessage(`Numeric variable "${data.text}" added to Values`, 'success');
+                } else {
+                    showMessage(`Numeric variable "${data.text}" is already in Values`, 'error');
+                }
+            }
         }
 
         function filterItems(bucketType) {
@@ -697,7 +790,7 @@
             const searchTerm = searchInput.value.toLowerCase();
 
             items.forEach(item => {
-                const text = item.textContent.toLowerCase();
+                const text = item.textContent.replace('2x', '').toLowerCase(); // Remove hint text
                 item.style.display = text.includes(searchTerm) ? 'block' : 'none';
             });
         }
@@ -715,8 +808,6 @@
                 zone.addEventListener('dragenter', handleDragEnter);
                 zone.addEventListener('dragleave', handleDragLeave);
             });
-
-      });
         }
 
         function handleDragStart(event) {
@@ -725,7 +816,7 @@
                 event.dataTransfer.setData('text/plain', JSON.stringify({
                     value: event.target.dataset.value,
                     type: event.target.dataset.type,
-                    text: event.target.textContent
+                    text: event.target.textContent.replace('2x', '').trim() // Remove hint text
                 }));
             }
         }
@@ -760,28 +851,46 @@
             dropZone.classList.remove('drag-over');
             const data = JSON.parse(event.dataTransfer.getData('text/plain'));
             
-            // Determine which area this is
+            // Determine which area this is and apply mapping rules
             const zoneId = dropZone.id;
-            let targetArray;
             
             if (zoneId === 'rows-zone') {
-                targetArray = currentState.rows;
-            } else if (zoneId === 'columns-zone') {
-                targetArray = currentState.columns;
-            } else if (zoneId === 'values-zone') {
-                targetArray = currentState.values;
-            }
-
-            // Add item if not already present
-            if (!targetArray.some(item => item.value === data.value)) {
-                targetArray.push(data);
-                
-                // Initialize default aggregation for numeric variables in values zone
-                if (zoneId === 'values-zone' && data.type === 'numeric') {
-                    currentState.aggregations[data.value] = 'sum';
+                // Only time variables can go to rows
+                if (data.type === 'time') {
+                    currentState.rows = [data]; // Single selection only - replace existing
+                    updateDropZoneDisplay(zoneId);
+                    showMessage(`Time variable "${data.text}" added to Rows`, 'success');
+                } else {
+                    showMessage('Only Time variables can be added to Rows', 'error');
                 }
-                
-                updateDropZoneDisplay(zoneId);
+            } else if (zoneId === 'columns-zone') {
+                // Only factor variables can go to columns
+                if (data.type === 'factor') {
+                    if (!currentState.columns.some(item => item.value === data.value)) {
+                        currentState.columns.push(data);
+                        updateDropZoneDisplay(zoneId);
+                        showMessage(`Factor variable "${data.text}" added to Columns`, 'success');
+                    } else {
+                        showMessage(`Factor variable "${data.text}" is already in Columns`, 'error');
+                    }
+                } else {
+                    showMessage('Only Factor variables can be added to Columns', 'error');
+                }
+            } else if (zoneId === 'values-zone') {
+                // Only numeric variables can go to values
+                if (data.type === 'numeric') {
+                    if (!currentState.values.some(item => item.value === data.value)) {
+                        currentState.values.push(data);
+                        // Initialize default aggregation
+                        currentState.aggregations[data.value] = 'sum';
+                        updateDropZoneDisplay(zoneId);
+                        showMessage(`Numeric variable "${data.text}" added to Values`, 'success');
+                    } else {
+                        showMessage(`Numeric variable "${data.text}" is already in Values`, 'error');
+                    }
+                } else {
+                    showMessage('Only Numeric variables can be added to Values', 'error');
+                }
             }
         }
 
@@ -1041,7 +1150,6 @@
                 return processedRow;
             });
         }
-
 
         function calculateAggregation(values, aggFunction) {
             if (!values || values.length === 0) return 0;
