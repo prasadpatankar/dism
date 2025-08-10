@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<!-- saved from url=(0056)file:///C:/Users/prasa/Downloads/fixed_pivot_webapp.html -->
-<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Pivot Table Analytics</title>
     <style>
@@ -483,18 +483,18 @@
                 <button class="option-btn" data-option="A">Option A</button>
                 <button class="option-btn" data-option="B">Option B</button>
                 <button class="option-btn" data-option="C">Option C</button>
-                <button class="option-btn selected" data-option="D">Option D</button>
+                <button class="option-btn" data-option="D">Option D</button>
             </div>
         </div>
 
-        <div class="main-content active" id="main-content">
+        <div class="main-content" id="main-content">
             <div class="buckets-container">
                 <div class="bucket" id="time-bucket">
                     <div class="bucket-header">
                         <h3>Time Variables</h3>
                         <input type="text" class="search-box" placeholder="Search time variables..." id="time-search">
                     </div>
-                    <div class="bucket-content" id="time-content"><div class="bucket-item" draggable="true" data-type="time" data-value="Yearly">Yearly</div><div class="bucket-item" draggable="true" data-type="time" data-value="Quarterly">Quarterly</div><div class="bucket-item" draggable="true" data-type="time" data-value="Monthly">Monthly</div><div class="bucket-item" draggable="true" data-type="time" data-value="Daily">Daily</div></div>
+                    <div class="bucket-content" id="time-content"></div>
                 </div>
 
                 <div class="bucket" id="factor-bucket">
@@ -502,7 +502,7 @@
                         <h3>Factor Variables</h3>
                         <input type="text" class="search-box" placeholder="Search factor variables..." id="factor-search">
                     </div>
-                    <div class="bucket-content" id="factor-content"><div class="bucket-item" draggable="true" data-type="factor" data-value="exchange">exchange</div><div class="bucket-item" draggable="true" data-type="factor" data-value="segment">segment</div><div class="bucket-item" draggable="true" data-type="factor" data-value="instrument">instrument</div></div>
+                    <div class="bucket-content" id="factor-content"></div>
                 </div>
 
                 <div class="bucket" id="numeric-bucket">
@@ -510,7 +510,7 @@
                         <h3>Numeric Variables</h3>
                         <input type="text" class="search-box" placeholder="Search numeric variables..." id="numeric-search">
                     </div>
-                    <div class="bucket-content" id="numeric-content"><div class="bucket-item" draggable="true" data-type="numeric" data-value="volume">volume</div><div class="bucket-item" draggable="true" data-type="numeric" data-value="oi">oi</div><div class="bucket-item" draggable="true" data-type="numeric" data-value="turnover">turnover</div><div class="bucket-item" draggable="true" data-type="numeric" data-value="trading_days">trading_days</div><div class="bucket-item" draggable="true" data-type="numeric" data-value="no_of_securities">no_of_securities</div></div>
+                    <div class="bucket-content" id="numeric-content"></div>
                 </div>
             </div>
 
@@ -519,22 +519,15 @@
                 <div class="pivot-areas">
                     <div class="drop-zone" id="rows-zone">
                         <h4>Rows</h4>
-                        <div class="drop-zone-content" id="rows-content"><div class="dropped-item"><span>Yearly</span><button class="remove-btn">×</button></div></div>
+                        <div class="drop-zone-content" id="rows-content"></div>
                     </div>
                     <div class="drop-zone" id="columns-zone">
                         <h4>Columns (Optional)</h4>
-                        <div class="drop-zone-content" id="columns-content"><div class="dropped-item"><span>exchange</span><button class="remove-btn">×</button></div></div>
+                        <div class="drop-zone-content" id="columns-content"></div>
                     </div>
                     <div class="drop-zone" id="values-zone">
                         <h4>Values</h4>
-                        <div class="drop-zone-content" id="values-content"><div class="dropped-item"><span>volume</span><select class="aggregation-selector">
-                        <option value="sum">Sum</option>
-                        <option value="mean">Mean</option>
-                        <option value="median">Median</option>
-                        <option value="min">Min</option>
-                        <option value="max">Max</option>
-                        <option value="count">Count</option>
-                    </select><button class="remove-btn">×</button></div></div>
+                        <div class="drop-zone-content" id="values-content"></div>
                     </div>
                 </div>
                 <div class="controls">
@@ -552,7 +545,12 @@
                         <button class="export-btn" id="custom-chart">Custom Chart</button>
                     </div>
                 </div>
-                <div id="results-content"><table class="pivot-table"><thead><tr><th>Yearly</th><th>exchange</th><th>volume (SUM)</th></tr></thead><tbody><tr><td><strong>2023</strong></td><td>BSE</td><td>62,60,000</td></tr><tr><td><strong>2023</strong></td><td>NSE</td><td>88,90,000</td></tr><tr><td><strong>2024</strong></td><td>BSE</td><td>18,70,000</td></tr><tr><td><strong>2024</strong></td><td>NSE</td><td>16,50,000</td></tr></tbody></table></div>
+                <div id="results-content">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Please configure your pivot table and click "Generate" to see results
+                    </div>
+                </div>
             </div>
 
             <div class="auth-panel">
@@ -1042,6 +1040,7 @@
             });
         }
 
+
         function calculateAggregation(values, aggFunction) {
             if (!values || values.length === 0) return 0;
             
@@ -1069,118 +1068,120 @@
         }
 
         function displayPivotTable(data) {
-    if (data.length === 0) {
-        resultsContent.innerHTML = '<div class="loading">No data available for the selected configuration</div>';
-        return;
-    }
+            if (data.length === 0) {
+                resultsContent.innerHTML = '<div class="loading">No data available for the selected configuration</div>';
+                return;
+            }
 
-    // Get unique column values for header generation
-    const processedData = processDataByTimeFrequency();
-    const columnValues = getUniqueColumnValues(processedData);
-    const hasColumns = currentState.columns.length > 0;
+            // Get unique column values for header generation
+            const processedData = processDataByTimeFrequency();
+            const columnValues = getUniqueColumnValues(processedData);
+            const hasColumns = currentState.columns.length > 0;
 
-    let html = '<table class="pivot-table"><thead>';
-    
-    // Create header row
-    html += '<tr>';
-    
-    // Add row variable headers as separate columns
-    currentState.rows.forEach(rowVar => {
-        html += `<th>${rowVar.text}</th>`;
-    });
-    
-    // Add column variable headers as separate columns (not spread across multiple columns)
-    if (hasColumns) {
-        currentState.columns.forEach(colVar => {
-            html += `<th>${colVar.text}</th>`;
-        });
-    }
-    
-    // Add value headers (without column prefixes)
-    currentState.values.forEach(val => {
-        const aggFunction = currentState.aggregations[val.value] || 'sum';
-        html += `<th>${val.text} (${aggFunction.toUpperCase()})</th>`;
-    });
-    
-    html += '</tr></thead><tbody>';
-
-    // Create expanded data rows - one row for each row-column combination
-    const expandedRows = [];
-    
-    data.forEach(row => {
-        if (hasColumns && columnValues.length > 0) {
-            // Create a separate row for each column value
-            columnValues.forEach(colValue => {
-                const newRow = {
-                    rowKey: row.rowKey,
-                    columnValue: colValue
-                };
-                
-                // Add value data for this specific column value
-                currentState.values.forEach(val => {
-                    const columnLabel = `${colValue}_${val.value}`;
-                    newRow[val.value] = row[columnLabel] || 0;
+            let html = '<table class="pivot-table"><thead>';
+            
+            // Create header row
+            html += '<tr>';
+            
+            // Add row variable headers as separate columns
+            currentState.rows.forEach(rowVar => {
+                html += `<th>${rowVar.text}</th>`;
+            });
+            
+            // Add column variable headers as separate columns (not spread across multiple columns)
+            if (hasColumns) {
+                currentState.columns.forEach(colVar => {
+                    html += `<th>${colVar.text}</th>`;
                 });
-                
-                expandedRows.push(newRow);
-            });
-        } else {
-            // No columns - just add the row as is
-            const newRow = {
-                rowKey: row.rowKey
-            };
-            
-            currentState.values.forEach(val => {
-                newRow[val.value] = row[val.value] || 0;
-            });
-            
-            expandedRows.push(newRow);
-        }
-    });
-
-    // Display the expanded rows
-    expandedRows.forEach(row => {
-        html += '<tr>';
-        
-        // Split the rowKey and display each row variable value in separate columns
-        const rowKeyParts = row.rowKey.split(' | ');
-        currentState.rows.forEach((rowVar, index) => {
-            const cellValue = rowKeyParts[index] || '';
-            html += `<td><strong>${cellValue}</strong></td>`;
-        });
-        
-        // Add column variable values
-        if (hasColumns) {
-            html += `<td>${row.columnValue}</td>`;
-        }
-        
-        // Add value data
-        currentState.values.forEach(val => {
-            const value = row[val.value] || 0;
-            const aggFunction = currentState.aggregations[val.value] || 'sum';
-            let displayValue;
-            
-            if (aggFunction === 'mean' || aggFunction === 'median') {
-                displayValue = Number(value).toFixed(2);
-            } else if (aggFunction === 'count') {
-                displayValue = Math.round(Number(value)).toLocaleString();
-            } else {
-                displayValue = Number(value).toLocaleString();
             }
             
-            html += `<td>${displayValue}</td>`;
-        });
-        
-        html += '</tr>';
-    });
+            // Add value headers (without column prefixes)
+            currentState.values.forEach(val => {
+                const aggFunction = currentState.aggregations[val.value] || 'sum';
+                html += `<th>${val.text} (${aggFunction.toUpperCase()})</th>`;
+            });
+            
+            html += '</tr></thead><tbody>';
 
-    html += '</tbody></table>';
-    resultsContent.innerHTML = html;
-    
-    const columnInfo = hasColumns ? ` with ${columnValues.length} column groups` : '';
-    showMessage(`Pivot table generated successfully with ${expandedRows.length} rows${columnInfo}`, 'success');
-}
+            // Create expanded data rows - one row for each row-column combination
+            const expandedRows = [];
+            
+            data.forEach(row => {
+                if (hasColumns && columnValues.length > 0) {
+                    // Create a separate row for each column value
+                    columnValues.forEach(colValue => {
+                        const newRow = {
+                            rowKey: row.rowKey,
+                            columnValues: colValue.split(' | ') // Split multiple column values
+                        };
+                        
+                        // Add value data for this specific column value
+                        currentState.values.forEach(val => {
+                            const columnLabel = `${colValue}_${val.value}`;
+                            newRow[val.value] = row[columnLabel] || 0;
+                        });
+                        
+                        expandedRows.push(newRow);
+                    });
+                } else {
+                    // No columns - just add the row as is
+                    const newRow = {
+                        rowKey: row.rowKey
+                    };
+                    
+                    currentState.values.forEach(val => {
+                        newRow[val.value] = row[val.value] || 0;
+                    });
+                    
+                    expandedRows.push(newRow);
+                }
+            });
 
+            // Display the expanded rows
+            expandedRows.forEach(row => {
+                html += '<tr>';
+                
+                // Split the rowKey and display each row variable value in separate columns
+                const rowKeyParts = row.rowKey.split(' | ');
+                currentState.rows.forEach((rowVar, index) => {
+                    const cellValue = rowKeyParts[index] || '';
+                    html += `<td><strong>${cellValue}</strong></td>`;
+                });
+                
+                // Add column variable values - display each column variable in separate columns
+                if (hasColumns) {
+                    currentState.columns.forEach((colVar, index) => {
+                        const columnValue = row.columnValues && row.columnValues[index] ? row.columnValues[index] : '';
+                        html += `<td>${columnValue}</td>`;
+                    });
+                }
+                
+                // Add value data
+                currentState.values.forEach(val => {
+                    const value = row[val.value] || 0;
+                    const aggFunction = currentState.aggregations[val.value] || 'sum';
+                    let displayValue;
+                    
+                    if (aggFunction === 'mean' || aggFunction === 'median') {
+                        displayValue = Number(value).toFixed(2);
+                    } else if (aggFunction === 'count') {
+                        displayValue = Math.round(Number(value)).toLocaleString();
+                    } else {
+                        displayValue = Number(value).toLocaleString();
+                    }
+                    
+                    html += `<td>${displayValue}</td>`;
+                });
+                
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            resultsContent.innerHTML = html;
+            
+            const columnInfo = hasColumns ? ` with ${columnValues.length} column groups` : '';
+            showMessage(`Pivot table generated successfully with ${expandedRows.length} rows${columnInfo}`, 'success');
+        }
 
         function showCustomChart() {
             const table = document.querySelector('.pivot-table');
@@ -1326,5 +1327,5 @@
         }
 
     </script>
-
-</body></html>
+</body>
+</html>
